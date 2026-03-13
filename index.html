@@ -7,105 +7,97 @@
 <style>
 
 body{
-font-family: Arial, sans-serif;
-background: linear-gradient(135deg,#1f2937,#111827);
+font-family:Segoe UI, sans-serif;
+background:linear-gradient(140deg,#111827,#1f2937);
 color:white;
 margin:0;
-height:100vh;
 display:flex;
-align-items:center;
 justify-content:center;
+align-items:center;
+height:100vh;
 }
 
-/* LOGIN SCREEN */
+/* LOGIN */
 
 #loginBox{
-background:#111827;
+background:#1f2937;
 padding:40px;
 border-radius:12px;
-text-align:center;
 box-shadow:0 10px 40px rgba(0,0,0,.6);
+text-align:center;
 }
 
-input{
-padding:10px;
+input,select{
+padding:8px;
 border-radius:6px;
 border:none;
-margin-top:10px;
+margin:5px;
 }
 
 button{
-padding:10px 15px;
 border:none;
 border-radius:6px;
+padding:6px 10px;
 cursor:pointer;
-margin-left:5px;
 }
 
-#error{
-color:#ff6b6b;
-margin-top:10px;
-}
+#error{color:#ff6b6b;margin-top:10px;}
 
 /* APP */
 
-#app{
-display:none;
-width:90%;
-max-width:1200px;
-}
+#app{display:none;width:1200px;}
 
 .board{
 display:flex;
-gap:40px;
+gap:30px;
 }
 
 .column{
 background:#1f2937;
+flex:1;
 padding:20px;
 border-radius:10px;
-width:50%;
-box-shadow:0 10px 30px rgba(0,0,0,.5);
-}
-
-.column h2{
-margin-top:0;
+box-shadow:0 10px 30px rgba(0,0,0,.6);
 }
 
 .card{
 background:#374151;
-padding:12px;
-margin-bottom:10px;
 border-radius:8px;
+padding:10px;
+margin-bottom:10px;
 display:flex;
 justify-content:space-between;
 align-items:center;
 }
 
-.tag{
+.tags span{
 font-size:11px;
-padding:3px 7px;
+padding:3px 6px;
 border-radius:6px;
-margin-right:6px;
+margin-right:4px;
 }
 
-.active{background:#22c55e;}
-.early{background:#a855f7;}
-.unreleased{background:#3b82f6;}
+.ACTIVE{background:#22c55e;}
+.EARLY_ACCESS{background:#a855f7;}
+.UNRELEASED{background:#3b82f6;}
 
-.card-left{
-display:flex;
-align-items:center;
+.controls button{
+margin-left:4px;
 }
 
-.moveBtn{
-background:#10b981;
-color:white;
+.moveBtn{background:#10b981;color:white;}
+.undoBtn{background:#f59e0b;color:white;}
+.deleteBtn{background:#ef4444;color:white;}
+
+.addBox{
+background:#111827;
+padding:10px;
+border-radius:8px;
+margin-bottom:15px;
 }
 
-.undoBtn{
-background:#f59e0b;
-color:white;
+.addBox input{
+width:40%;
 }
 
 </style>
@@ -113,22 +105,36 @@ color:white;
 
 <body>
 
-<!-- LOGIN -->
-
 <div id="loginBox">
 <h2>Game Queue Access</h2>
-<p>Enter password</p>
-
 <input type="password" id="password">
-
 <button onclick="login()">Enter</button>
-
 <div id="error"></div>
 </div>
 
-<!-- APP -->
-
 <div id="app">
+
+<div class="addBox">
+
+<input id="newName" placeholder="Add new game">
+
+<select id="tag1">
+<option value="">Tag 1</option>
+<option>ACTIVE</option>
+<option>EARLY_ACCESS</option>
+<option>UNRELEASED</option>
+</select>
+
+<select id="tag2">
+<option value="">Tag 2</option>
+<option>ACTIVE</option>
+<option>EARLY_ACCESS</option>
+<option>UNRELEASED</option>
+</select>
+
+<button onclick="addGame()">Add Game</button>
+
+</div>
 
 <div class="board">
 
@@ -143,50 +149,39 @@ color:white;
 </div>
 
 </div>
-
 </div>
 
 <script>
 
-const PASSWORD = "goop"
+const PASSWORD="goop"
+
+/* LOGIN */
 
 function login(){
-
-const entered = document.getElementById("password").value
-
-if(entered === PASSWORD){
-
+const pass=document.getElementById("password").value
+if(pass===PASSWORD){
 document.getElementById("loginBox").style.display="none"
 document.getElementById("app").style.display="block"
-
 load()
-
 }else{
-
 document.getElementById("error").innerText="Incorrect password"
-
 }
-
 }
 
 /* DEFAULT DATA */
 
-const defaultQueue = [
-
-{name:"ASA: The Island", tag:"active"},
-{name:"Abiotic Factor"},
-{name:"Hell Divers 2"},
-{name:"Core Keeper"},
-{name:"Grounded 2", tag:"early"},
-{name:"Subnautica 2", tag:"unreleased"}
-
+const defaultQueue=[
+{name:"ASA: The Island",tags:["ACTIVE"]},
+{name:"Abiotic Factor",tags:[]},
+{name:"Hell Divers 2",tags:[]},
+{name:"Core Keeper",tags:[]},
+{name:"Grounded 2",tags:["EARLY_ACCESS"]},
+{name:"Subnautica 2",tags:["UNRELEASED"]}
 ]
 
-const defaultCompleted = [
-
-{name:"Sons of the Forest"},
-{name:"Grounded"}
-
+const defaultCompleted=[
+{name:"Sons of the Forest",tags:[]},
+{name:"Grounded",tags:[]}
 ]
 
 let queue=[]
@@ -195,32 +190,27 @@ let completed=[]
 /* STORAGE */
 
 function load(){
-
-queue = JSON.parse(localStorage.getItem("queue")) || defaultQueue
-completed = JSON.parse(localStorage.getItem("completed")) || defaultCompleted
-
+queue=JSON.parse(localStorage.getItem("queue"))||defaultQueue
+completed=JSON.parse(localStorage.getItem("completed"))||defaultCompleted
 render()
-
 }
 
 function save(){
-
 localStorage.setItem("queue",JSON.stringify(queue))
 localStorage.setItem("completed",JSON.stringify(completed))
-
 }
 
 /* RENDER */
 
 function render(){
 
-const queueDiv = document.getElementById("queue")
-const completedDiv = document.getElementById("completed")
+const q=document.getElementById("queue")
+const c=document.getElementById("completed")
 
-queueDiv.innerHTML=""
-completedDiv.innerHTML=""
+q.innerHTML=""
+c.innerHTML=""
 
-/* queue */
+/* QUEUE */
 
 queue.forEach((game,i)=>{
 
@@ -229,68 +219,149 @@ card.className="card"
 
 let tagHTML=""
 
-if(game.tag){
-
-tagHTML=`<span class="tag ${game.tag}">${game.tag.toUpperCase()}</span>`
-
-}
+game.tags.forEach(t=>{
+tagHTML+=`<span class="${t}">${t.replace("_"," ")}</span>`
+})
 
 card.innerHTML=`
-<div class="card-left">
-${tagHTML}
-${game.name}
+<div>
+<div>${game.name}</div>
+<div class="tags">${tagHTML}</div>
 </div>
 
-<button class="moveBtn" onclick="completeGame(${i})">
-✓
-</button>
+<div class="controls">
+
+<button class="moveBtn" onclick="completeGame(${i})">✓</button>
+<button onclick="editTags(${i})">🏷</button>
+<button class="deleteBtn" onclick="deleteGame(${i})">✖</button>
+
+</div>
 `
 
-queueDiv.appendChild(card)
+q.appendChild(card)
 
 })
 
-/* completed */
+/* COMPLETED */
 
 completed.forEach((game,i)=>{
 
 const card=document.createElement("div")
 card.className="card"
 
-card.innerHTML=`
-<div>${game.name}</div>
+let tagHTML=""
 
-<button class="undoBtn" onclick="undoGame(${i})">
-↺
-</button>
+game.tags.forEach(t=>{
+tagHTML+=`<span class="${t}">${t.replace("_"," ")}</span>`
+})
+
+card.innerHTML=`
+<div>
+<div>${game.name}</div>
+<div class="tags">${tagHTML}</div>
+</div>
+
+<div class="controls">
+
+<button class="undoBtn" onclick="undoGame(${i})">↺</button>
+<button class="deleteBtn" onclick="deleteCompleted(${i})">✖</button>
+
+</div>
 `
 
-completedDiv.appendChild(card)
+c.appendChild(card)
 
 })
 
 }
 
-/* MOVE GAME */
+/* ADD GAME */
 
-function completeGame(index){
+function addGame(){
 
-completed.push(queue[index])
-queue.splice(index,1)
+const name=document.getElementById("newName").value
+let tag1=document.getElementById("tag1").value
+let tag2=document.getElementById("tag2").value
+
+if(!name) return
+
+let tags=[tag1,tag2].filter(t=>t)
+
+if(tags.length>2) tags=tags.slice(0,2)
+
+/* enforce single ACTIVE */
+
+if(tags.includes("ACTIVE")){
+removeActive()
+}
+
+queue.push({name,tags})
+
+save()
+render()
+
+document.getElementById("newName").value=""
+
+}
+
+/* EDIT TAGS */
+
+function editTags(i){
+
+let t1=prompt("Tag1: ACTIVE / EARLY_ACCESS / UNRELEASED or blank")
+let t2=prompt("Tag2:")
+
+let tags=[t1,t2].filter(t=>t)
+
+if(tags.includes("ACTIVE")){
+removeActive()
+}
+
+queue[i].tags=tags.slice(0,2)
 
 save()
 render()
 
 }
 
-function undoGame(index){
+/* REMOVE OTHER ACTIVE */
 
-queue.push(completed[index])
-completed.splice(index,1)
+function removeActive(){
 
+queue.forEach(g=>{
+g.tags=g.tags.filter(t=>t!=="ACTIVE")
+})
+
+}
+
+/* MOVE */
+
+function completeGame(i){
+completed.push(queue[i])
+queue.splice(i,1)
 save()
 render()
+}
 
+function undoGame(i){
+queue.push(completed[i])
+completed.splice(i,1)
+save()
+render()
+}
+
+/* DELETE */
+
+function deleteGame(i){
+queue.splice(i,1)
+save()
+render()
+}
+
+function deleteCompleted(i){
+completed.splice(i,1)
+save()
+render()
 }
 
 </script>
