@@ -1,10 +1,299 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>My Site</title>
+<meta charset="UTF-8">
+<title>Survival Game Queue</title>
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+background: linear-gradient(135deg,#1f2937,#111827);
+color:white;
+margin:0;
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+/* LOGIN SCREEN */
+
+#loginBox{
+background:#111827;
+padding:40px;
+border-radius:12px;
+text-align:center;
+box-shadow:0 10px 40px rgba(0,0,0,.6);
+}
+
+input{
+padding:10px;
+border-radius:6px;
+border:none;
+margin-top:10px;
+}
+
+button{
+padding:10px 15px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+margin-left:5px;
+}
+
+#error{
+color:#ff6b6b;
+margin-top:10px;
+}
+
+/* APP */
+
+#app{
+display:none;
+width:90%;
+max-width:1200px;
+}
+
+.board{
+display:flex;
+gap:40px;
+}
+
+.column{
+background:#1f2937;
+padding:20px;
+border-radius:10px;
+width:50%;
+box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+
+.column h2{
+margin-top:0;
+}
+
+.card{
+background:#374151;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.tag{
+font-size:11px;
+padding:3px 7px;
+border-radius:6px;
+margin-right:6px;
+}
+
+.active{background:#22c55e;}
+.early{background:#a855f7;}
+.unreleased{background:#3b82f6;}
+
+.card-left{
+display:flex;
+align-items:center;
+}
+
+.moveBtn{
+background:#10b981;
+color:white;
+}
+
+.undoBtn{
+background:#f59e0b;
+color:white;
+}
+
+</style>
 </head>
+
 <body>
-<h1>Hello World</h1>
-<p>This site is hosted with GitHub Pages.</p>
+
+<!-- LOGIN -->
+
+<div id="loginBox">
+<h2>Game Queue Access</h2>
+<p>Enter password</p>
+
+<input type="password" id="password">
+
+<button onclick="login()">Enter</button>
+
+<div id="error"></div>
+</div>
+
+<!-- APP -->
+
+<div id="app">
+
+<div class="board">
+
+<div class="column">
+<h2>Game Queue</h2>
+<div id="queue"></div>
+</div>
+
+<div class="column">
+<h2>Completed</h2>
+<div id="completed"></div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const PASSWORD = "goop"
+
+function login(){
+
+const entered = document.getElementById("password").value
+
+if(entered === PASSWORD){
+
+document.getElementById("loginBox").style.display="none"
+document.getElementById("app").style.display="block"
+
+load()
+
+}else{
+
+document.getElementById("error").innerText="Incorrect password"
+
+}
+
+}
+
+/* DEFAULT DATA */
+
+const defaultQueue = [
+
+{name:"ASA: The Island", tag:"active"},
+{name:"Abiotic Factor"},
+{name:"Hell Divers 2"},
+{name:"Core Keeper"},
+{name:"Grounded 2", tag:"early"},
+{name:"Subnautica 2", tag:"unreleased"}
+
+]
+
+const defaultCompleted = [
+
+{name:"Sons of the Forest"},
+{name:"Grounded"}
+
+]
+
+let queue=[]
+let completed=[]
+
+/* STORAGE */
+
+function load(){
+
+queue = JSON.parse(localStorage.getItem("queue")) || defaultQueue
+completed = JSON.parse(localStorage.getItem("completed")) || defaultCompleted
+
+render()
+
+}
+
+function save(){
+
+localStorage.setItem("queue",JSON.stringify(queue))
+localStorage.setItem("completed",JSON.stringify(completed))
+
+}
+
+/* RENDER */
+
+function render(){
+
+const queueDiv = document.getElementById("queue")
+const completedDiv = document.getElementById("completed")
+
+queueDiv.innerHTML=""
+completedDiv.innerHTML=""
+
+/* queue */
+
+queue.forEach((game,i)=>{
+
+const card=document.createElement("div")
+card.className="card"
+
+let tagHTML=""
+
+if(game.tag){
+
+tagHTML=`<span class="tag ${game.tag}">${game.tag.toUpperCase()}</span>`
+
+}
+
+card.innerHTML=`
+<div class="card-left">
+${tagHTML}
+${game.name}
+</div>
+
+<button class="moveBtn" onclick="completeGame(${i})">
+✓
+</button>
+`
+
+queueDiv.appendChild(card)
+
+})
+
+/* completed */
+
+completed.forEach((game,i)=>{
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<div>${game.name}</div>
+
+<button class="undoBtn" onclick="undoGame(${i})">
+↺
+</button>
+`
+
+completedDiv.appendChild(card)
+
+})
+
+}
+
+/* MOVE GAME */
+
+function completeGame(index){
+
+completed.push(queue[index])
+queue.splice(index,1)
+
+save()
+render()
+
+}
+
+function undoGame(index){
+
+queue.push(completed[index])
+completed.splice(index,1)
+
+save()
+render()
+
+}
+
+</script>
+
 </body>
 </html>
