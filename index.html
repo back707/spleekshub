@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Survival Game Queue</title>
+<title>Game Queue</title>
 
 <style>
 
 body{
-font-family:Segoe UI, sans-serif;
-background:linear-gradient(140deg,#111827,#1f2937);
+font-family:Segoe UI;
+background:#0f172a;
 color:white;
 margin:0;
 display:flex;
@@ -17,35 +17,14 @@ align-items:center;
 height:100vh;
 }
 
-/* LOGIN */
-
-#loginBox{
-background:#1f2937;
+#login{
+background:#1e293b;
 padding:40px;
-border-radius:12px;
-box-shadow:0 10px 40px rgba(0,0,0,.6);
+border-radius:10px;
 text-align:center;
 }
 
-input,select{
-padding:8px;
-border-radius:6px;
-border:none;
-margin:5px;
-}
-
-button{
-border:none;
-border-radius:6px;
-padding:6px 10px;
-cursor:pointer;
-}
-
-#error{color:#ff6b6b;margin-top:10px;}
-
-/* APP */
-
-#app{display:none;width:1200px;}
+#app{display:none;width:1100px;}
 
 .board{
 display:flex;
@@ -53,17 +32,16 @@ gap:30px;
 }
 
 .column{
-background:#1f2937;
-flex:1;
+background:#1e293b;
 padding:20px;
 border-radius:10px;
-box-shadow:0 10px 30px rgba(0,0,0,.6);
+flex:1;
 }
 
 .card{
-background:#374151;
-border-radius:8px;
+background:#334155;
 padding:10px;
+border-radius:8px;
 margin-bottom:10px;
 display:flex;
 justify-content:space-between;
@@ -81,23 +59,29 @@ margin-right:4px;
 .EARLY_ACCESS{background:#a855f7;}
 .UNRELEASED{background:#3b82f6;}
 
-.controls button{
-margin-left:4px;
+button{
+border:none;
+border-radius:6px;
+padding:5px 8px;
+cursor:pointer;
 }
 
-.moveBtn{background:#10b981;color:white;}
-.undoBtn{background:#f59e0b;color:white;}
-.deleteBtn{background:#ef4444;color:white;}
+.move{background:#10b981;color:white;}
+.undo{background:#f59e0b;color:white;}
+.delete{background:#ef4444;color:white;}
 
-.addBox{
-background:#111827;
-padding:10px;
-border-radius:8px;
-margin-bottom:15px;
+.addbox{
+background:#1e293b;
+padding:15px;
+border-radius:10px;
+margin-bottom:20px;
 }
 
-.addBox input{
-width:40%;
+input,select{
+padding:6px;
+border-radius:6px;
+border:none;
+margin-right:6px;
 }
 
 </style>
@@ -105,41 +89,42 @@ width:40%;
 
 <body>
 
-<div id="loginBox">
-<h2>Game Queue Access</h2>
-<input type="password" id="password">
+<div id="login">
+<h2>Game Queue</h2>
+<input type="password" id="pw">
 <button onclick="login()">Enter</button>
-<div id="error"></div>
+<p id="error" style="color:red;"></p>
 </div>
 
 <div id="app">
 
-<div class="addBox">
+<div class="addbox">
 
-<input id="newName" placeholder="Add new game">
+<input id="name" placeholder="Game name">
 
 <select id="tag1">
-<option value="">Tag 1</option>
-<option>ACTIVE</option>
-<option>EARLY_ACCESS</option>
-<option>UNRELEASED</option>
+<option value="">Tag1</option>
+<option value="ACTIVE">ACTIVE</option>
+<option value="EARLY_ACCESS">EARLY ACCESS</option>
+<option value="UNRELEASED">UNRELEASED</option>
 </select>
 
 <select id="tag2">
-<option value="">Tag 2</option>
-<option>ACTIVE</option>
-<option>EARLY_ACCESS</option>
-<option>UNRELEASED</option>
+<option value="">Tag2</option>
+<option value="ACTIVE">ACTIVE</option>
+<option value="EARLY_ACCESS">EARLY ACCESS</option>
+<option value="UNRELEASED">UNRELEASED</option>
 </select>
 
 <button onclick="addGame()">Add Game</button>
+<button onclick="resetData()">Reset List</button>
 
 </div>
 
 <div class="board">
 
 <div class="column">
-<h2>Game Queue</h2>
+<h2>Queue</h2>
 <div id="queue"></div>
 </div>
 
@@ -149,23 +134,28 @@ width:40%;
 </div>
 
 </div>
+
 </div>
 
 <script>
 
 const PASSWORD="goop"
 
-/* LOGIN */
-
 function login(){
-const pass=document.getElementById("password").value
-if(pass===PASSWORD){
-document.getElementById("loginBox").style.display="none"
+
+if(document.getElementById("pw").value===PASSWORD){
+
+document.getElementById("login").style.display="none"
 document.getElementById("app").style.display="block"
-load()
+
+init()
+
 }else{
+
 document.getElementById("error").innerText="Incorrect password"
+
 }
+
 }
 
 /* DEFAULT DATA */
@@ -187,17 +177,25 @@ const defaultCompleted=[
 let queue=[]
 let completed=[]
 
-/* STORAGE */
+function init(){
 
-function load(){
-queue=JSON.parse(localStorage.getItem("queue"))||defaultQueue
-completed=JSON.parse(localStorage.getItem("completed"))||defaultCompleted
+queue=JSON.parse(localStorage.getItem("queue"))
+completed=JSON.parse(localStorage.getItem("completed"))
+
+if(!queue){queue=[...defaultQueue]}
+if(!completed){completed=[...defaultCompleted]}
+
 render()
+
 }
 
+/* SAVE */
+
 function save(){
+
 localStorage.setItem("queue",JSON.stringify(queue))
 localStorage.setItem("completed",JSON.stringify(completed))
+
 }
 
 /* RENDER */
@@ -210,97 +208,95 @@ const c=document.getElementById("completed")
 q.innerHTML=""
 c.innerHTML=""
 
-/* QUEUE */
+/* queue */
 
-queue.forEach((game,i)=>{
-
-const card=document.createElement("div")
-card.className="card"
+queue.forEach((g,i)=>{
 
 let tagHTML=""
 
-game.tags.forEach(t=>{
+g.tags.forEach(t=>{
 tagHTML+=`<span class="${t}">${t.replace("_"," ")}</span>`
 })
 
-card.innerHTML=`
+q.innerHTML+=`
+<div class="card">
+
 <div>
-<div>${game.name}</div>
+<div>${g.name}</div>
 <div class="tags">${tagHTML}</div>
 </div>
 
-<div class="controls">
-
-<button class="moveBtn" onclick="completeGame(${i})">✓</button>
+<div>
+<button class="move" onclick="completeGame(${i})">✓</button>
 <button onclick="editTags(${i})">🏷</button>
-<button class="deleteBtn" onclick="deleteGame(${i})">✖</button>
+<button class="delete" onclick="deleteGame(${i})">✖</button>
+</div>
 
 </div>
 `
 
-q.appendChild(card)
-
 })
 
-/* COMPLETED */
+/* completed */
 
-completed.forEach((game,i)=>{
-
-const card=document.createElement("div")
-card.className="card"
+completed.forEach((g,i)=>{
 
 let tagHTML=""
 
-game.tags.forEach(t=>{
+g.tags.forEach(t=>{
 tagHTML+=`<span class="${t}">${t.replace("_"," ")}</span>`
 })
 
-card.innerHTML=`
+c.innerHTML+=`
+<div class="card">
+
 <div>
-<div>${game.name}</div>
+<div>${g.name}</div>
 <div class="tags">${tagHTML}</div>
 </div>
 
-<div class="controls">
-
-<button class="undoBtn" onclick="undoGame(${i})">↺</button>
-<button class="deleteBtn" onclick="deleteCompleted(${i})">✖</button>
+<div>
+<button class="undo" onclick="undoGame(${i})">↺</button>
+<button class="delete" onclick="deleteCompleted(${i})">✖</button>
+</div>
 
 </div>
 `
 
-c.appendChild(card)
-
 })
+
+save()
 
 }
 
-/* ADD GAME */
+/* ADD */
 
 function addGame(){
 
-const name=document.getElementById("newName").value
-let tag1=document.getElementById("tag1").value
-let tag2=document.getElementById("tag2").value
+let name=document.getElementById("name").value.trim()
 
 if(!name) return
 
-let tags=[tag1,tag2].filter(t=>t)
+let tags=[
+document.getElementById("tag1").value,
+document.getElementById("tag2").value
+].filter(t=>t)
 
-if(tags.length>2) tags=tags.slice(0,2)
+tags=[...new Set(tags)].slice(0,2)
 
-/* enforce single ACTIVE */
+/* enforce one ACTIVE */
 
 if(tags.includes("ACTIVE")){
-removeActive()
+queue.forEach(g=>{
+g.tags=g.tags.filter(t=>t!=="ACTIVE")
+})
 }
 
 queue.push({name,tags})
 
-save()
-render()
+document.getElementById("name").value=""
 
-document.getElementById("newName").value=""
+render()
 
 }
 
@@ -308,60 +304,72 @@ document.getElementById("newName").value=""
 
 function editTags(i){
 
-let t1=prompt("Tag1: ACTIVE / EARLY_ACCESS / UNRELEASED or blank")
-let t2=prompt("Tag2:")
+let t1=prompt("Tag1: ACTIVE / EARLY_ACCESS / UNRELEASED")
+let t2=prompt("Tag2")
 
 let tags=[t1,t2].filter(t=>t)
 
+tags=[...new Set(tags)].slice(0,2)
+
 if(tags.includes("ACTIVE")){
-removeActive()
-}
-
-queue[i].tags=tags.slice(0,2)
-
-save()
-render()
-
-}
-
-/* REMOVE OTHER ACTIVE */
-
-function removeActive(){
-
 queue.forEach(g=>{
 g.tags=g.tags.filter(t=>t!=="ACTIVE")
 })
+}
+
+queue[i].tags=tags
+
+render()
 
 }
 
 /* MOVE */
 
 function completeGame(i){
+
 completed.push(queue[i])
 queue.splice(i,1)
-save()
+
 render()
+
 }
 
 function undoGame(i){
+
 queue.push(completed[i])
 completed.splice(i,1)
-save()
+
 render()
+
 }
 
 /* DELETE */
 
 function deleteGame(i){
+
 queue.splice(i,1)
-save()
+
 render()
+
 }
 
 function deleteCompleted(i){
+
 completed.splice(i,1)
-save()
+
 render()
+
+}
+
+/* RESET */
+
+function resetData(){
+
+localStorage.removeItem("queue")
+localStorage.removeItem("completed")
+
+location.reload()
+
 }
 
 </script>
