@@ -1,378 +1,231 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Game Queue</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The List</title>
+  <style>
+    :root {
+      --bg-color: #f4f4f9;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --accent-color: #4CAF50;
+      --border-color: #eeeeee;
+    }
 
-<style>
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      padding-top: 50px;
+      margin: 0;
+      min-height: 100vh;
+    }
 
-body{
-font-family:Segoe UI;
-background:#0f172a;
-color:white;
-margin:0;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
+    .list-container {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 450px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      padding: 30px;
+      box-sizing: border-box;
+    }
 
-#login{
-background:#1e293b;
-padding:40px;
-border-radius:10px;
-text-align:center;
-}
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
 
-#app{display:none;width:1100px;}
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
 
-.board{
-display:flex;
-gap:30px;
-}
+    li {
+      display: flex;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border-color);
+      transition: all 0.4s ease;
+      opacity: 1;
+      transform: translateX(0);
+    }
 
-.column{
-background:#1e293b;
-padding:20px;
-border-radius:10px;
-flex:1;
-}
+    li:last-child {
+      border-bottom: none;
+    }
 
-.card{
-background:#334155;
-padding:10px;
-border-radius:8px;
-margin-bottom:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
+    /* Custom Checkbox */
+    input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      margin-right: 15px;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: all 0.2s ease;
+    }
 
-.tags span{
-font-size:11px;
-padding:3px 6px;
-border-radius:6px;
-margin-right:4px;
-}
+    input[type="checkbox"]::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em white;
+      background-color: transform;
+      transform-origin: center;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
 
-.ACTIVE{background:#22c55e;}
-.EARLY_ACCESS{background:#a855f7;}
-.UNRELEASED{background:#3b82f6;}
+    input[type="checkbox"]:checked {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+    }
 
-button{
-border:none;
-border-radius:6px;
-padding:5px 8px;
-cursor:pointer;
-}
+    input[type="checkbox"]:checked::before {
+      transform: scale(1);
+    }
 
-.move{background:#10b981;color:white;}
-.undo{background:#f59e0b;color:white;}
-.delete{background:#ef4444;color:white;}
+    /* Strikethrough Animation Container */
+    .item-text {
+      position: relative;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-.addbox{
-background:#1e293b;
-padding:15px;
-border-radius:10px;
-margin-bottom:20px;
-}
+    /* The Animated Line */
+    .item-text::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      height: 2px;
+      background: #888;
+      width: 0%;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-input,select{
-padding:6px;
-border-radius:6px;
-border:none;
-margin-right:6px;
-}
+    /* Active Animation States */
+    li.checked .item-text {
+      color: #888;
+    }
 
-</style>
+    li.checked .item-text::after {
+      width: 100%;
+    }
+
+    li.fade-out {
+      opacity: 0;
+      transform: translateX(30px);
+      pointer-events: none;
+    }
+
+    .loader {
+      text-align: center;
+      color: #888;
+      font-style: italic;
+    }
+  </style>
 </head>
-
 <body>
 
-<div id="login">
-<h2>Game Queue</h2>
-<input type="password" id="pw">
-<button onclick="login()">Enter</button>
-<p id="error" style="color:red;"></p>
-</div>
-
-<div id="app">
-
-<div class="addbox">
-
-<input id="name" placeholder="Game name">
-
-<select id="tag1">
-<option value="">Tag1</option>
-<option value="ACTIVE">ACTIVE</option>
-<option value="EARLY_ACCESS">EARLY ACCESS</option>
-<option value="UNRELEASED">UNRELEASED</option>
-</select>
-
-<select id="tag2">
-<option value="">Tag2</option>
-<option value="ACTIVE">ACTIVE</option>
-<option value="EARLY_ACCESS">EARLY ACCESS</option>
-<option value="UNRELEASED">UNRELEASED</option>
-</select>
-
-<button onclick="addGame()">Add Game</button>
-<button onclick="resetData()">Reset List</button>
-
-</div>
-
-<div class="board">
-
-<div class="column">
-<h2>Queue</h2>
-<div id="queue"></div>
-</div>
-
-<div class="column">
-<h2>Completed</h2>
-<div id="completed"></div>
-</div>
-
-</div>
-
-</div>
-
-<script>
-
-const PASSWORD="goop"
-
-function login(){
-
-if(document.getElementById("pw").value===PASSWORD){
-
-document.getElementById("login").style.display="none"
-document.getElementById("app").style.display="block"
-
-init()
-
-}else{
-
-document.getElementById("error").innerText="Incorrect password"
-
-}
-
-}
-
-/* DEFAULT DATA */
-
-const defaultQueue=[
-{name:"ASA: The Island",tags:["ACTIVE"]},
-{name:"Abiotic Factor",tags:[]},
-{name:"Hell Divers 2",tags:[]},
-{name:"Core Keeper",tags:[]},
-{name:"Grounded 2",tags:["EARLY_ACCESS"]},
-{name:"Subnautica 2",tags:["UNRELEASED"]}
-]
-
-const defaultCompleted=[
-{name:"Sons of the Forest",tags:[]},
-{name:"Grounded",tags:[]}
-]
-
-let queue=[]
-let completed=[]
-
-function init(){
-
-queue=JSON.parse(localStorage.getItem("queue"))
-completed=JSON.parse(localStorage.getItem("completed"))
-
-if(!queue){queue=[...defaultQueue]}
-if(!completed){completed=[...defaultCompleted]}
-
-render()
-
-}
-
-/* SAVE */
-
-function save(){
-
-localStorage.setItem("queue",JSON.stringify(queue))
-localStorage.setItem("completed",JSON.stringify(completed))
-
-}
-
-/* RENDER */
-
-function render(){
-
-const q=document.getElementById("queue")
-const c=document.getElementById("completed")
-
-q.innerHTML=""
-c.innerHTML=""
-
-/* queue */
-
-queue.forEach((g,i)=>{
-
-let tagHTML=""
-
-g.tags.forEach(t=>{
-tagHTML+=`<span class="${t}">${t.replace("_"," ")}</span>`
-})
-
-q.innerHTML+=`
-<div class="card">
-
-<div>
-<div>${g.name}</div>
-<div class="tags">${tagHTML}</div>
-</div>
-
-<div>
-<button class="move" onclick="completeGame(${i})">✓</button>
-<button onclick="editTags(${i})">🏷</button>
-<button class="delete" onclick="deleteGame(${i})">✖</button>
-</div>
-
-</div>
-`
-
-})
-
-/* completed */
-
-completed.forEach((g,i)=>{
-
-let tagHTML=""
-
-g.tags.forEach(t=>{
-tagHTML+=`<span class="${t}">${t.replace("_"," ")}</span>`
-})
-
-c.innerHTML+=`
-<div class="card">
-
-<div>
-<div>${g.name}</div>
-<div class="tags">${tagHTML}</div>
-</div>
-
-<div>
-<button class="undo" onclick="undoGame(${i})">↺</button>
-<button class="delete" onclick="deleteCompleted(${i})">✖</button>
-</div>
-
-</div>
-`
-
-})
-
-save()
-
-}
-
-/* ADD */
-
-function addGame(){
-
-let name=document.getElementById("name").value.trim()
-
-if(!name) return
-
-let tags=[
-document.getElementById("tag1").value,
-document.getElementById("tag2").value
-].filter(t=>t)
-
-tags=[...new Set(tags)].slice(0,2)
-
-/* enforce one ACTIVE */
-
-if(tags.includes("ACTIVE")){
-queue.forEach(g=>{
-g.tags=g.tags.filter(t=>t!=="ACTIVE")
-})
-}
-
-queue.push({name,tags})
-
-document.getElementById("name").value=""
-
-render()
-
-}
-
-/* EDIT TAGS */
-
-function editTags(i){
-
-let t1=prompt("Tag1: ACTIVE / EARLY_ACCESS / UNRELEASED")
-let t2=prompt("Tag2")
-
-let tags=[t1,t2].filter(t=>t)
-
-tags=[...new Set(tags)].slice(0,2)
-
-if(tags.includes("ACTIVE")){
-queue.forEach(g=>{
-g.tags=g.tags.filter(t=>t!=="ACTIVE")
-})
-}
-
-queue[i].tags=tags
-
-render()
-
-}
-
-/* MOVE */
-
-function completeGame(i){
-
-completed.push(queue[i])
-queue.splice(i,1)
-
-render()
-
-}
-
-function undoGame(i){
-
-queue.push(completed[i])
-completed.splice(i,1)
-
-render()
-
-}
-
-/* DELETE */
-
-function deleteGame(i){
-
-queue.splice(i,1)
-
-render()
-
-}
-
-function deleteCompleted(i){
-
-completed.splice(i,1)
-
-render()
-
-}
-
-/* RESET */
-
-function resetData(){
-
-localStorage.removeItem("queue")
-localStorage.removeItem("completed")
-
-location.reload()
-
-}
-
-</script>
+  <div class="list-container">
+    <h1>The List</h1>
+    <div id="loader" class="loader">Fetching items...</div>
+    <ul id="list"></ul>
+  </div>
+
+  <script>
+    // --- IMPORTANT: Paste your copied Apps Script Web App URL below ---
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBARe3mhSvd_bx0IkOYaTFNfQFzOJ330SSdA5LBAGJ7vlwJb5YmOpEPpcos7wrNF0D/exec';
+    
+    const listElement = document.getElementById('list');
+    const loaderElement = document.getElementById('loader');
+
+    // Fetch initial items on load
+    async function loadItems() {
+      try {
+        const response = await fetch(`${SCRIPT_URL}?action=getItems`);
+        const items = await response.json();
+        
+        loaderElement.style.display = 'none';
+        
+        if (items.length === 0) {
+          listElement.innerHTML = '<li style="color: #888; border: none;">The list is empty.</li>';
+          return;
+        }
+
+        items.forEach(item => {
+          createListItem(item);
+        });
+      } catch (error) {
+        loaderElement.innerText = 'Failed to load list.';
+        console.error('Error fetching list:', error);
+      }
+    }
+
+    // Build the DOM elements
+    function createListItem(text) {
+      const li = document.createElement('li');
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      
+      const span = document.createElement('span');
+      span.className = 'item-text';
+      span.innerText = text;
+
+      // Allow clicking the text to check the box
+      span.addEventListener('click', () => {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+      });
+
+      checkbox.addEventListener('change', async function() {
+        if (this.checked) {
+          // 1. Trigger Strikethrough
+          li.classList.add('checked');
+          this.disabled = true; // Prevent multiple clicks
+
+          // 2. Wait for strikethrough, then trigger fade out
+          setTimeout(() => {
+            li.classList.add('fade-out');
+          }, 400); // 400ms delay
+
+          // 3. Remove from UI and fire off the delete request
+          setTimeout(async () => {
+            li.remove();
+            
+            // Background deletion call to Google Sheet
+            try {
+              await fetch(`${SCRIPT_URL}?action=deleteItem&item=${encodeURIComponent(text)}`);
+            } catch (err) {
+              console.error('Failed to delete from sheet:', err);
+            }
+          }, 800); // 800ms total delay before DOM removal
+        }
+      });
+
+      li.appendChild(checkbox);
+      li.appendChild(span);
+      listElement.appendChild(li);
+    }
+
+    // Initialize
+    loadItems();
+  </script>
 
 </body>
 </html>
